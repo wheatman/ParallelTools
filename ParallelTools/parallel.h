@@ -28,6 +28,10 @@ inline void parallel_for(size_t start, size_t end, F f,
     }
   }
 }
+template <typename F>
+inline void parallel_for(size_t start, size_t end, const size_t step, F f) {
+  cilk_for(size_t i = start; i < end; i += step) f(i);
+}
 
 template <typename F, typename RAC>
 inline void parallel_for_each(RAC &container, F f, const size_t chunksize = 0) {
@@ -94,14 +98,22 @@ inline void parallel_for_each_spawn(RAC &container, F f,
 
 template <typename F>
 inline void parallel_for(size_t start, size_t end, F f,
-                         const size_t chunksize = 0) {
+                         [[maybe_unused]] const size_t chunksize = 0) {
   for (size_t i = start; i < end; i++) {
     f(i);
   }
 }
 
+template <typename F>
+inline void parallel_for(size_t start, size_t end, const size_t step, F f) {
+  for (size_t i = start; i < end; i += step) {
+    f(i);
+  }
+}
+
 template <typename F, typename RAC>
-inline void parallel_for_each(RAC &container, F f, const size_t chunksize = 0) {
+inline void parallel_for_each(RAC &container, F f,
+                              [[maybe_unused]] const size_t chunksize = 0) {
   for (size_t i = 0; i < container.size(); i++) {
     f(container[i]);
   }
