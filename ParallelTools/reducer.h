@@ -151,6 +151,22 @@ public:
     }
     return default_return;
   }
+
+  size_t size() const {
+    size_t n = 0;
+    for (auto &d : data) {
+      n += d.f.size();
+    }
+    return n;
+  }
+  bool empty() const {
+    for (auto &d : data) {
+      if (!d.f.empty()) {
+        return false;
+      }
+    }
+    return true;
+  }
 };
 
 } // namespace ParallelTools
