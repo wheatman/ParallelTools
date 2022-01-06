@@ -22,8 +22,8 @@ inline void parallel_for(size_t start, size_t end, F f,
       if (local_end > end) {
         local_end = end;
       }
-      for (size_t j = i; i < local_end; j++) {
-        f(i);
+      for (size_t j = i; j < local_end; j++) {
+        f(j);
       }
     }
   }
