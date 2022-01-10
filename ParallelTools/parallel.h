@@ -29,7 +29,7 @@ inline void parallel_for(size_t start, size_t end, F f,
   }
 }
 template <typename F>
-inline void parallel_for(size_t start, size_t end, const size_t step, F f) {
+inline void parallel_for(size_t start, size_t end, size_t step, F f) {
   cilk_for(size_t i = start; i < end; i += step) f(i);
 }
 
@@ -105,7 +105,7 @@ inline void parallel_for(size_t start, size_t end, F f,
 }
 
 template <typename F>
-inline void parallel_for(size_t start, size_t end, const size_t step, F f) {
+inline void parallel_for(size_t start, size_t end, size_t step, F f) {
   for (size_t i = start; i < end; i += step) {
     f(i);
   }

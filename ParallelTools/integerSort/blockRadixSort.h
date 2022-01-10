@@ -255,7 +255,7 @@ void iSort(E *A, oint *bucketOffsets, long n, long m, bool bottomUp,
   // if n fits in 32 bits then use unsigned ints for bucket counts
   // otherwise use unsigned longs
   // Doesn't make much difference in performance
-  if (n < std::numeric_limits<uint32_t>::max())
+  if (n < static_cast<int64_t>(std::numeric_limits<uint32_t>::max()))
     iSortX<unsigned int>(A, bucketOffsets, n, m, bottomUp, tmpSpace, f);
   else
     iSortX<unsigned long>(A, bucketOffsets, n, m, bottomUp, tmpSpace, f);
@@ -320,6 +320,11 @@ template <class T> void integerSort(pair<uintT, T> *A, long n, char *s) {
   long maxV = sequence::mapReduce<uintT>(A, n, utils::maxF<uintT>(),
                                          utils::firstF<uintT, T>());
   intSort::iSort(A, n, maxV + 1, s, utils::firstF<uintT, T>());
+}
+
+template <class T>[[maybe_unused]] static void integerSort(T *A, long n) {
+  long maxV = sequence::reduce(A, n, utils::maxF<T>());
+  intSort::iSort(A, n, maxV + 1, utils::identityF<T>());
 }
 } // namespace ParallelTools
 
