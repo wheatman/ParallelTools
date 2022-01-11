@@ -58,10 +58,11 @@ merge(A[r+1...j], B[s...ℓ], C[t+1...q])
 // TODO(wheatman) make a better parallel sort
 template <class RandomIt, class Compare = std::less<>>
 void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
+#if CILK != 1
+  return std::sort(first, last, comp);
+#endif
   using E = typename std::iterator_traits<RandomIt>::value_type;
-  std::sort(first, last, comp);
-  return;
-  if (last - first < 1000) {
+  if (last - first < 10000) {
     std::sort(first, last, comp);
   } else {
     RandomIt mid = first + ((last - first) / 2);
