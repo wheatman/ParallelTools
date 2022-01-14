@@ -51,7 +51,7 @@ merge(A[r+1...j], B[s...ℓ], C[t+1...q])
   *out_mid = *r;
   cilk_spawn ParallelTools::merge(longer_start, r, shorter_start, s, d_first,
                                   comp);
-  ParallelTools::merge(r + 1, longer_last, s, shorter_last, out_mid, comp);
+  ParallelTools::merge(r + 1, longer_last, s, shorter_last, out_mid + 1, comp);
   cilk_sync;
 }
 
