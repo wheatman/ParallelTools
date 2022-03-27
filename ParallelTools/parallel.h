@@ -2,6 +2,21 @@
 #include <cstdlib>
 namespace ParallelTools {
 
+// these can be useful for debugging since they can be easily switched with the
+// parallel ones even when compiling with CILK==1
+template <typename F>
+inline void serial_for(size_t start, size_t end, F f,
+                       [[maybe_unused]] const size_t chunksize = 0) {
+  for (size_t i = start; i < end; i++)
+    f(i);
+}
+
+template <typename F>
+inline void serial_for(size_t start, size_t end, size_t step, F f) {
+  for (size_t i = start; i < end; i += step)
+    f(i);
+}
+
 // intel cilk+
 #if CILK == 1
 #include <cilk/cilk.h>
