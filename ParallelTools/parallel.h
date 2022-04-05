@@ -22,12 +22,14 @@ inline void serial_for(size_t start, size_t end, size_t step, F f) {
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 
+template <typename F> inline void parallel_for(size_t start, size_t end, F f) {
+  cilk_for(size_t i = start; i < end; i++) f(i);
+}
+
 template <typename F>
 inline void parallel_for(size_t start, size_t end, F f,
-                         const size_t chunksize = 0) {
-  if (chunksize == 0) {
-    cilk_for(size_t i = start; i < end; i++) f(i);
-  } else if ((end - start) <= chunksize) {
+                         const size_t chunksize) {
+  if ((end - start) <= chunksize) {
     for (size_t i = start; i < end; i++) {
       f(i);
     }
