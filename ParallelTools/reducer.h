@@ -1,6 +1,10 @@
 #pragma once
 
 #include "parallel.h"
+#include "sort.hpp"
+#if CILK == 1
+#include <cilk/cilksan.h>
+#endif
 
 #include <algorithm>
 #include <cstring>
@@ -27,10 +31,19 @@ template <class F> class Reducer {
   };
   std::vector<aligned_f> data;
 
+#if CILK == 1
+  // so cilksan doesn't report races on accesses to the vector which I make sure
+  // are fine by using getWorkerNum()
+  Cilksan_fake_mutex fake_lock;
+#endif
+
 public:
   Reducer() { data.resize(ParallelTools::getWorkers()); }
   void update(F new_values) {
     int worker_num = getWorkerNum();
+#if CILK == 1
+    Cilksan_fake_lock_guard guad(&fake_lock);
+#endif
     data[worker_num].f.update(new_values);
   }
   F get() const {
@@ -109,8 +122,7 @@ public:
       std::memcpy(output.data() + lengths[i], data[i].f.data(),
                   data[i].f.size() * sizeof(T));
     });
-    // TODO(wheatman) could be parallel sort
-    std::sort(output.begin(), output.end());
+    ParallelTools::sort(output.begin(), output.end());
     return output;
   }
 
