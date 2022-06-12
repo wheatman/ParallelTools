@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <hwy/contrib/sort/vqsort.h>
+
 namespace ParallelTools {
 
 template <class InputIt, class OutputIt, class Compare = std::less<>>
@@ -71,6 +73,27 @@ void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
     E *tmp = (E *)malloc((last - first) * sizeof(E));
     cilk_sync;
     merge(first, mid, mid, last, tmp, comp);
+    ParallelTools::parallel_for(0, last - first,
+                                [&](size_t i) { first[i] = tmp[i]; });
+    free(tmp);
+  }
+}
+
+template <class RandomIt> void isort_asc(RandomIt first, RandomIt last) {
+#if CILK != 1
+  return std::sort(first, last);
+#endif
+  using E = typename std::iterator_traits<RandomIt>::value_type;
+  if (last - first < 100000) {
+    hwy::Sorter sorter;
+    sorter(first, last - first, hwy::SortAscending());
+  } else {
+    RandomIt mid = first + ((last - first) / 2);
+    cilk_spawn ParallelTools::isort_asc(first, mid);
+    ParallelTools::isort_asc(mid, last);
+    E *tmp = (E *)malloc((last - first) * sizeof(E));
+    cilk_sync;
+    merge(first, mid, mid, last, tmp);
     ParallelTools::parallel_for(0, last - first,
                                 [&](size_t i) { first[i] = tmp[i]; });
     free(tmp);
