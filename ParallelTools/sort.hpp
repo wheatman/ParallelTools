@@ -5,6 +5,7 @@
 #include <functional>
 
 #include <hwy/contrib/sort/vqsort.h>
+#include <iterator>
 
 namespace ParallelTools {
 
@@ -76,6 +77,46 @@ void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
     ParallelTools::parallel_for(0, last - first,
                                 [&](size_t i) { first[i] = tmp[i]; });
     free(tmp);
+  }
+}
+
+template <class RandomIt, class UnaryPredicate>
+RandomIt partition(RandomIt first, RandomIt last, UnaryPredicate p,
+                   size_t level = 0) {
+  if (std::distance(first, last) < 100000) {
+    return std::partition(first, last, p);
+  }
+  auto middle = std::next(first, std::distance(first, last) / 2);
+  auto left_break =
+      cilk_spawn ParallelTools::partition(first, middle, p, level + 1);
+  auto right_break = ParallelTools::partition(middle, last, p, level + 1);
+  cilk_sync;
+  auto new_middle = left_break + (right_break - middle);
+  auto flip_point =
+      std::next(left_break, std::distance(left_break, right_break) / 2);
+  size_t flip_length = std::distance(left_break, flip_point);
+  cilk_for(size_t i = 0; i < flip_length; i++) {
+    std::swap(left_break[i], right_break[-i - 1]);
+  }
+  return new_middle;
+}
+
+template <class RandomIt, class Compare = std::less<>>
+void qsort(RandomIt first, RandomIt last, Compare comp = std::less<>(),
+           size_t level = 0) {
+#if CILK != 1
+  return std::sort(first, last, comp);
+#endif
+  if (last - first < 10000 || level > 128) {
+    std::sort(first, last, comp);
+  } else {
+    auto pivot = *std::next(first, std::distance(first, last) / 2);
+    RandomIt mid = ParallelTools::partition(
+        first, last, [pivot, comp](const auto &em) { return comp(em, pivot); },
+        level);
+    cilk_spawn ParallelTools::qsort(first, mid, comp, level + 1);
+    ParallelTools::qsort(mid, last, comp, level + 1);
+    cilk_sync;
   }
 }
 
