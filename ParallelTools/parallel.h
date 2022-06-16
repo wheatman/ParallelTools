@@ -149,4 +149,14 @@ inline void parallel_for_each_spawn(RAC &container, F f,
 [[maybe_unused]] static int getWorkerNum() { return 0; }
 
 #endif
+
+template <bool parallel, typename F>
+inline void For(size_t start, size_t end, F f) {
+  if constexpr (parallel) {
+    return parallel_for(start, end, f);
+  } else {
+    return serial_for(start, end, f);
+  }
+}
+
 } // namespace ParallelTools
