@@ -22,7 +22,6 @@
 
 #ifndef _BENCH_UTILS_INCLUDED
 #define _BENCH_UTILS_INCLUDED
-#include "../helpers.h"
 #include "../parallel.h"
 #include <algorithm>
 #include <iostream>

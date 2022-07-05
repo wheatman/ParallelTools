@@ -23,7 +23,6 @@
 #ifndef A_SEQUENCE_INCLUDED
 #define A_SEQUENCE_INCLUDED
 
-#include "../helpers.h"
 #include "../parallel.h"
 #include "utils.h"
 #include <iostream>
@@ -99,7 +98,7 @@ OT reduce(intT s, intT e, F f, G g) {
   intT l = nblocks(e - s, _SCAN_BSIZE);
   if (l <= 1)
     return reduceSerial<OT>(s, e, f, g);
-  OT *Sums = newA<OT>(l);
+  OT *Sums = (OT *)malloc(l * sizeof(OT));
   blocked_for(i, s, e, _SCAN_BSIZE, Sums[i] = reduceSerial<OT>(s, e, f, g););
   OT r = reduce<OT>((intT)0, l, f, getA<OT, intT>(Sums));
   free(Sums);
@@ -171,7 +170,7 @@ ET scan(ET *Out, intT s, intT e, F f, G g, ET zero, bool inclusive, bool back) {
   intT l = nblocks(n, _SCAN_BSIZE);
   if (l <= 2)
     return scanSerial(Out, s, e, f, g, zero, inclusive, back);
-  ET *Sums = newA<ET>(nblocks(n, _SCAN_BSIZE));
+  ET *Sums = (ET *)malloc(nblocks(n, _SCAN_BSIZE) * sizeof(ET));
   blocked_for(i, s, e, _SCAN_BSIZE, Sums[i] = reduceSerial<ET>(s, e, f, g););
   ET total = scan(Sums, (intT)0, l, f, getA<ET, intT>(Sums), zero, false, back);
   blocked_for(i, s, e, _SCAN_BSIZE,
