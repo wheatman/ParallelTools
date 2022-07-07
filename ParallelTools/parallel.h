@@ -1,5 +1,10 @@
 #pragma once
 #include <cstdlib>
+#if CILK == 1
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
+#endif
+
 namespace ParallelTools {
 
 // these can be useful for debugging since they can be easily switched with the
@@ -19,8 +24,6 @@ inline void serial_for(size_t start, size_t end, size_t step, F f) {
 
 // intel cilk+
 #if CILK == 1
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 
 template <typename F> inline void parallel_for(size_t start, size_t end, F f) {
   cilk_for(size_t i = start; i < end; i++) f(i);
