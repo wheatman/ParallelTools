@@ -70,6 +70,28 @@ public:
   void add(T new_value) { reducer.update(new_value); }
   void inc() { reducer.update(1); }
   T get() const { return reducer.get().value; }
+  Reducer_sum &operator++() {
+    inc();
+    return *this;
+  }
+  Reducer_sum &operator--() {
+    add(-1);
+    return *this;
+  }
+
+  Reducer_sum &operator-=(T new_value) {
+    add(-new_value);
+    return *this;
+  }
+  Reducer_sum &operator+=(T new_value) {
+    add(+new_value);
+    return *this;
+  }
+
+  friend bool operator==(const Reducer_sum &lhs, const Reducer_sum &rhs) {
+    return lhs.get() == rhs.get();
+  }
+  operator T() const { return get(); }
 };
 
 template <class T> class Reducer_max {
