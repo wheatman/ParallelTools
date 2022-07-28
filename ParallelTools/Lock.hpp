@@ -212,6 +212,24 @@ public:
     return true;
   }
 
+  bool try_upgrade_release_on_fail(int cpuid = -1) {
+    // acquire write lock.
+
+    if (__sync_lock_test_and_set(&writer, 1)) {
+      pc_add(&pc_counter, -1, cpuid);
+      return false;
+    }
+
+    pc_add(&pc_counter, -1, cpuid);
+
+    // wait for readers to finish
+    do {
+      pc_sync(&pc_counter);
+    } while (readers);
+
+    return true;
+  }
+
   void write_unlock(void) {
     __sync_lock_release(&writer);
     return;
