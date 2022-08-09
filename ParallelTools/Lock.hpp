@@ -92,9 +92,9 @@ public:
 
     pc_counter.add(1, cpuid);
 
-    while (writer.test()) {
+    while (writer.test(std::memory_order_relaxed)) {
       pc_counter.add(-1, cpuid);
-      writer.wait(true);
+      writer.wait(true, std::memory_order_relaxed);
       pc_counter.add(1, cpuid);
     }
   }
@@ -110,8 +110,8 @@ public:
    */
   void write_lock() {
     // acquire write lock.
-    writer.wait(true);
-    while (writer.test_and_set()) {
+    while (writer.test_and_set(std::memory_order_acq_rel)) {
+      writer.wait(true, std::memory_order_acq_rel);
     }
     // wait for readers to finish
     do {
@@ -138,7 +138,7 @@ public:
   }
 
   void write_unlock(void) {
-    writer.clear();
+    writer.clear(std::memory_order_release);
     writer.notify_all();
     return;
   }
@@ -146,5 +146,5 @@ public:
 private:
   std::atomic<int64_t> readers;
   std::atomic_flag writer;
-  partitioned_counter<8, 8> pc_counter;
+  partitioned_counter<48, 8> pc_counter;
 };
