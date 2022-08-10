@@ -40,67 +40,71 @@ public:
   void unlock() { flag = false; }
 };
 
-class local_counter {
-public:
-  std::atomic<int64_t> counter = 0;
-  int64_t padding[7];
-};
+template <int num_counters = 8> class partitioned_counter {
 
-template <int num_counters = 8, int threshold = 8> class partitioned_counter {
+#ifdef __cpp_lib_hardware_interference_size
+  using std::hardware_constructive_interference_size;
+  using std::hardware_destructive_interference_size;
+#else
+  // 64 bytes on x86-64 │ L1_CACHE_BYTES │ L1_CACHE_SHIFT │ __cacheline_aligned
+  // │
+  // ...
+  static constexpr std::size_t hardware_constructive_interference_size = 64;
+  static constexpr std::size_t hardware_destructive_interference_size = 64;
+#endif
+
+  class local_counter {
+  public:
+    alignas(
+        hardware_destructive_interference_size) std::atomic<int64_t> counter{0};
+  };
+
   local_counter *local_counters;
-  std::atomic<int64_t> *global_counter;
 
 public:
-  partitioned_counter(std::atomic<int64_t> *global_counter_)
-      : global_counter(global_counter_) {
+  partitioned_counter() {
     local_counters = new local_counter[num_counters];
     return;
   }
 
-  void sync() {
+  int64_t get() {
+    int64_t total = 0;
     for (uint32_t i = 0; i < num_counters; i++) {
-      int64_t c = local_counters[i].counter.exchange(0);
-      *global_counter += c;
+      int64_t c = local_counters[i].counter.load();
+      total += c;
     }
+    return total;
   }
 
   void add(int64_t count, uint8_t counter_id) {
     counter_id = counter_id % num_counters;
-    int64_t cur_count =
-        local_counters[counter_id].counter.fetch_add(count) + count;
-    if (cur_count > threshold || cur_count < -threshold) {
-      int64_t c = local_counters[counter_id].counter.exchange(0);
-      *global_counter += c;
-    }
+    local_counters[counter_id].counter += count;
   }
 
-  ~partitioned_counter() {
-    sync();
-    delete[] local_counters;
-  }
+  ~partitioned_counter() { delete[] local_counters; }
 };
 
 class ReaderWriterLock {
 
 public:
-  ReaderWriterLock() : readers(0), writer(0), pc_counter(&readers) {}
+  ReaderWriterLock() : writer(0) {}
 
   /**
    * Try to acquire a lock and spin until the lock is available.
    */
   void read_lock(int cpuid = -1) {
 
-    pc_counter.add(1, cpuid);
+    readers.add(1, cpuid);
 
     while (writer.test(std::memory_order_relaxed)) {
-      pc_counter.add(-1, cpuid);
+      readers.add(-1, cpuid);
       writer.wait(true, std::memory_order_relaxed);
-      pc_counter.add(1, cpuid);
+      readers.add(1, cpuid);
     }
   }
 
   void read_unlock(int cpuid) {
-    pc_counter.add(-1, cpuid);
+    readers.add(-1, cpuid);
     return;
   }
 
@@ -114,25 +118,23 @@ public:
       writer.wait(true, std::memory_order_acq_rel);
     }
     // wait for readers to finish
-    do {
-      pc_counter.sync();
-    } while (readers);
+    while (readers.get()) {
+    }
   }
 
   bool try_upgrade_release_on_fail(int cpuid) {
     // acquire write lock.
 
     if (writer.test_and_set()) {
-      pc_counter.add(-1, cpuid);
+      readers.add(-1, cpuid);
       return false;
     }
 
-    pc_counter.add(-1, cpuid);
+    readers.add(-1, cpuid);
 
     // wait for readers to finish
-    do {
-      pc_counter.sync();
-    } while (readers);
+    while (readers.get()) {
+    }
 
     return true;
   }
@@ -144,7 +146,6 @@ public:
   }
 
 private:
-  std::atomic<int64_t> readers;
-  std::atomic_flag writer;
-  partitioned_counter<48, 8> pc_counter;
+  std::atomic_flag writer{false};
+  partitioned_counter<48> readers{};
 };
