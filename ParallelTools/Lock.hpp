@@ -7,6 +7,20 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifdef __cilksan__
+#ifdef __cplusplus
+extern "C" {
+#endif
+void __csan_default_libhook(uint64_t call_id, uint64_t func_id, unsigned count);
+void __csan_llvm_x86_sse2_pause(uint64_t call_id, uint64_t func_id,
+                                unsigned count) {
+  __csan_default_libhook(call_id, func_id, count);
+}
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 #define num_tries 3
 class Lock {
   std::atomic<bool> flag;
