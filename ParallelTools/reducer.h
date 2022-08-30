@@ -134,7 +134,11 @@ public:
     int worker_num = getWorkerNum();
     data[worker_num].f.emplace_back(arg);
   }
-  template <typename F> std::vector<T> get_sorted(F) const {
+  void push_back(T arg) {
+    int worker_num = getWorkerNum();
+    data[worker_num].f.push_back(arg);
+  }
+  std::vector<T> get_sorted() const {
     std::vector<size_t> lengths(data.size() + 1);
     for (size_t i = 1; i <= data.size(); i++) {
       lengths[i] += lengths[i - 1] + data[i - 1].f.size();
