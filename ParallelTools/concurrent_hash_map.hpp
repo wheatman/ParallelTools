@@ -3,6 +3,7 @@
 #include "parallel.h"
 #include "reducer.h"
 
+#include "flat_hash_map.hpp"
 #include <algorithm>
 #include <functional>
 #include <memory>
@@ -27,7 +28,7 @@ private:
   static constexpr std::size_t hardware_constructive_interference_size = 64;
   static constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
-  using Map = std::pair<std::unordered_map<Key, T, Hash, KeyEqual>, std::mutex>;
+  using Map = std::pair<ska::flat_hash_map<Key, T, Hash, KeyEqual>, std::mutex>;
   struct aligned_map {
     alignas(hardware_destructive_interference_size) Map m;
   };
@@ -137,6 +138,8 @@ public:
     });
     return entries;
   }
+
+  void clear() { maps.clear(); }
 };
 template <class Key, class T, class Hash = std::hash<Key>,
           class KeyEqual = std::equal_to<Key>>
