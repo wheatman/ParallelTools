@@ -47,7 +47,7 @@ private:
   }
 
 public:
-  concurrent_hash_map(int blow_up_factor = 10)
+  concurrent_hash_map(int blow_up_factor = (CILK == 1) ? 10 : 1)
       : maps(1UL << log2_up(ParallelTools::getWorkers() * blow_up_factor)) {}
 
   std::pair<bool, T *> insert(Key k, T value) {
