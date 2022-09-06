@@ -165,13 +165,13 @@ public:
     return output;
   }
 
-  template <typename F> void for_each(F f) {
+  template <typename F> void for_each(F f) const {
     ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
       ParallelTools::parallel_for(0, data[i].f.size(),
                                   [&](size_t j) { f(data[i].f[j]); });
     });
   }
-  template <typename F> void serial_for_each(F f) {
+  template <typename F> void serial_for_each(F f) const {
     for (auto &d : data) {
       for (auto &e : d.f) {
         f(e);
