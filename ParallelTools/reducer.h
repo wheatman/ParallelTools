@@ -153,9 +153,15 @@ public:
   }
 
   std::vector<T> get() const {
+    if (data.size() == 0) {
+      return {};
+    }
     std::vector<size_t> lengths(data.size() + 1);
     for (size_t i = 1; i <= data.size(); i++) {
       lengths[i] += lengths[i - 1] + data[i - 1].f.size();
+    }
+    if (lengths[data.size()] == 0) {
+      return {};
     }
     std::vector<T> output(lengths[data.size()]);
     ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
