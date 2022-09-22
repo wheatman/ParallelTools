@@ -49,16 +49,20 @@ merge(A[r+1...j], B[s...ℓ], C[t+1...q])
   InputIt s = std::lower_bound(shorter_start, shorter_last, *r, comp);
   OutputIt out_mid = d_first + (r - longer_start) + (s - shorter_start);
   *out_mid = *r;
-  cilk_spawn ParallelTools::merge(longer_start, r, shorter_start, s, d_first,
-                                  comp);
-  ParallelTools::merge(r + 1, longer_last, s, shorter_last, out_mid + 1, comp);
-  cilk_sync;
+  ParallelTools::par_do(
+      [&]() {
+        ParallelTools::merge(longer_start, r, shorter_start, s, d_first, comp);
+      },
+      [&]() {
+        ParallelTools::merge(r + 1, longer_last, s, shorter_last, out_mid + 1,
+                             comp);
+      });
 }
 
 // TODO(wheatman) make a better parallel sort
 template <class RandomIt, class Compare = std::less<>>
 void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
-#if CILK != 1
+#if PARALLEL == 0
   return std::sort(first, last, comp);
 #endif
   using E = typename std::iterator_traits<RandomIt>::value_type;
@@ -66,10 +70,13 @@ void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
     std::sort(first, last, comp);
   } else {
     RandomIt mid = first + ((last - first) / 2);
-    cilk_spawn ParallelTools::sort(first, mid, comp);
-    ParallelTools::sort(mid, last, comp);
-    E *tmp = (E *)malloc((last - first) * sizeof(E));
-    cilk_sync;
+    E *tmp = nullptr;
+    ParallelTools::par_do([&]() { ParallelTools::sort(first, mid, comp); },
+                          [&]() {
+                            ParallelTools::sort(mid, last, comp);
+                            tmp = (E *)malloc((last - first) * sizeof(E));
+                          });
+
     merge(first, mid, mid, last, tmp, comp);
     ParallelTools::parallel_for(0, last - first,
                                 [&](size_t i) { first[i] = tmp[i]; });

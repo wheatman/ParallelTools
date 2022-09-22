@@ -1,8 +1,20 @@
 #pragma once
+#include <cstddef>
 #include <cstdlib>
+
 #if CILK == 1
+#define PARALLEL 1
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
+#endif
+
+#if PARLAY == 1
+#define PARALLEL 1
+#include "parlay/parallel.h"
+#endif
+
+#if !defined(PARALLEL)
+#define PARALLEL 0
 #endif
 
 namespace ParallelTools {
@@ -110,11 +122,41 @@ inline void parallel_for_each_spawn(RAC &container, F f,
 [[maybe_unused]] static int getWorkerNum() {
   return __cilkrts_get_worker_number();
 }
+
+template <typename Lf, typename Rf> inline void par_do(Lf left, Rf right) {
+  cilk_spawn right();
+  left();
+  cilk_sync;
+}
+
+#elif PARLAY == 1
+
+template <typename F> inline void parallel_for(size_t start, size_t end, F f) {
+  parlay::parallel_for(start, end, f);
+}
+
+template <typename F>
+inline void parallel_for(size_t start, size_t end, F f,
+                         const size_t chunksize) {
+  parlay::parallel_for(start, end, f, chunksize);
+}
+
+template <typename F, typename RAC>
+inline void parallel_for_each(RAC &container, F f, const size_t chunksize = 0) {
+  parlay::parallel_for(
+      0, container.size(), [&](size_t i) { f(container[i]); }, chunksize);
+}
+
+[[maybe_unused]] static int getWorkers() { return parlay::num_workers(); }
+
+[[maybe_unused]] static int getWorkerNum() { return parlay::worker_id(); }
+
+template <typename Lf, typename Rf> inline void par_do(Lf left, Rf right) {
+  parlay::par_do(left, right)
+}
+
 // c++
 #else
-
-#define cilk_spawn
-#define cilk_sync
 
 template <typename F>
 inline void parallel_for(size_t start, size_t end, F f,
@@ -150,6 +192,11 @@ inline void parallel_for_each_spawn(RAC &container, F f,
 
 [[maybe_unused]] static int getWorkers() { return 1; }
 [[maybe_unused]] static int getWorkerNum() { return 0; }
+
+template <typename Lf, typename Rf> inline void par_do(Lf left, Rf right) {
+  right();
+  left();
+}
 
 #endif
 
