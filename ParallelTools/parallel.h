@@ -141,6 +141,12 @@ inline void parallel_for(size_t start, size_t end, F f,
   parlay::parallel_for(start, end, f, chunksize);
 }
 
+template <typename F>
+inline void parallel_for(size_t start, size_t end, size_t step, F f) {
+  parlay::parallel_for(0, (end - start) / step,
+                       [&](size_t i) { f(start + i * step); });
+}
+
 template <typename F, typename RAC>
 inline void parallel_for_each(RAC &container, F f, const size_t chunksize = 0) {
   parlay::parallel_for(
@@ -152,7 +158,7 @@ inline void parallel_for_each(RAC &container, F f, const size_t chunksize = 0) {
 [[maybe_unused]] static int getWorkerNum() { return parlay::worker_id(); }
 
 template <typename Lf, typename Rf> inline void par_do(Lf left, Rf right) {
-  parlay::par_do(left, right)
+  parlay::par_do(left, right);
 }
 
 // c++
