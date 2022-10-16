@@ -3,7 +3,11 @@
 #include "parallel.h"
 #include "reducer.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow-field-in-constructor"
+#pragma clang diagnostic ignored "-Wshadow"
 #include "flat_hash_map.hpp"
+#pragma clang diagnostic pop
 #include <algorithm>
 #include <functional>
 #include <memory>
