@@ -143,8 +143,11 @@ inline void parallel_for(size_t start, size_t end, F f,
 
 template <typename F>
 inline void parallel_for(size_t start, size_t end, size_t step, F f) {
-  parlay::parallel_for(0, (end - start) / step,
-                       [&](size_t i) { f(start + i * step); });
+  size_t last = (end - start) / step;
+  if ((end - start) % step != 0) {
+    last += 1;
+  }
+  parlay::parallel_for(0, last, [&](size_t i) { f(start + i * step); });
 }
 
 template <typename F, typename RAC>
