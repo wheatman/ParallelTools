@@ -10,7 +10,11 @@
 
 #if PARLAY == 1
 #define PARALLEL 1
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
 #include "parlay/parallel.h"
+#pragma clang diagnostic pop
 #endif
 
 #if !defined(PARALLEL)
