@@ -222,4 +222,13 @@ inline void For(size_t start, size_t end, F f) {
   }
 }
 
+template <bool parallel, typename F>
+inline void For(size_t start, size_t end, size_t step, F f) {
+  if constexpr (parallel) {
+    return parallel_for(start, end, step, f);
+  } else {
+    return serial_for(start, end, step, f);
+  }
+}
+
 } // namespace ParallelTools

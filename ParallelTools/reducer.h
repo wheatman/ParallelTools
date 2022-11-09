@@ -130,6 +130,11 @@ template <class T> class Reducer_Vector {
 public:
   Reducer_Vector() { data.resize(ParallelTools::getWorkers()); }
 
+  Reducer_Vector(std::vector<T> &start) {
+    data.resize(ParallelTools::getWorkers());
+    data[0].f = std::move(start);
+  }
+
   template <typename F> void push_back(F arg) {
     int worker_num = getWorkerNum();
     data[worker_num].f.emplace_back(arg);
