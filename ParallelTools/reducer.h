@@ -149,11 +149,15 @@ public:
       lengths[i] += lengths[i - 1] + data[i - 1].f.size();
     }
     std::vector<T> output(lengths[data.size()]);
-    ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
-      std::memcpy(output.data() + lengths[i], data[i].f.data(),
-                  data[i].f.size() * sizeof(T));
-    });
-    ParallelTools::sort(output.begin(), output.end());
+    if (output.size() > 0) {
+      ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
+        if (data[i].f.size() > 0) {
+          std::memcpy(output.data() + lengths[i], data[i].f.data(),
+                      data[i].f.size() * sizeof(T));
+        }
+      });
+      ParallelTools::sort(output.begin(), output.end());
+    }
     return output;
   }
 
@@ -169,10 +173,14 @@ public:
       return {};
     }
     std::vector<T> output(lengths[data.size()]);
-    ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
-      std::memcpy(output.data() + lengths[i], data[i].f.data(),
-                  data[i].f.size() * sizeof(T));
-    });
+    if (output.size() > 0) {
+      ParallelTools::parallel_for(0, data.size(), [&](size_t i) {
+        if (data[i].f.size() > 0) {
+          std::memcpy(output.data() + lengths[i], data[i].f.data(),
+                      data[i].f.size() * sizeof(T));
+        }
+      });
+    }
     return output;
   }
 
