@@ -27,7 +27,11 @@ template <class F> class Reducer {
 #endif
 
   struct aligned_f {
+#if PARALLEL == 1
     alignas(hardware_destructive_interference_size) F f;
+#else
+    F f;
+#endif
   };
   std::vector<aligned_f> data;
 
@@ -123,7 +127,11 @@ template <class T> class Reducer_Vector {
 #endif
 
   struct aligned_f {
+#if PARALLEL == 1
     alignas(hardware_destructive_interference_size) std::vector<T> f;
+#else
+    std::vector<T> f;
+#endif
   };
   std::vector<aligned_f> data;
 
