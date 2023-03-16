@@ -140,18 +140,32 @@ template <typename F> inline void parallel_for(size_t start, size_t end, F f) {
 }
 
 template <typename F>
-inline void parallel_for(size_t start, size_t end, F f,
-                         const size_t chunksize) {
-  parlay::parallel_for(start, end, f, chunksize);
-}
-
-template <typename F>
 inline void parallel_for(size_t start, size_t end, size_t step, F f) {
   size_t last = (end - start) / step;
   if ((end - start) % step != 0) {
     last += 1;
   }
   parlay::parallel_for(0, last, [&](size_t i) { f(start + i * step); });
+}
+
+template <typename F>
+inline void parallel_for(size_t start, size_t end, F f,
+                         const size_t chunksize) {
+  if ((end - start) <= chunksize) {
+    for (size_t i = start; i < end; i++) {
+      f(i);
+    }
+  } else {
+    parallel_for(start, end, chunksize, [&](auto i) {
+      size_t local_end = i + chunksize;
+      if (local_end > end) {
+        local_end = end;
+      }
+      for (size_t j = i; j < local_end; j++) {
+        f(j);
+      }
+    });
+  }
 }
 
 template <typename F, typename RAC>
