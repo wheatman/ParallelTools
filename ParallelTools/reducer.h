@@ -2,6 +2,7 @@
 
 #include "parallel.h"
 #include "sort.hpp"
+#include <type_traits>
 #if CILK == 1
 #include <cilk/cilksan.h>
 #endif
@@ -137,6 +138,21 @@ template <class T> class Reducer_Vector {
 
 public:
   Reducer_Vector() { data.resize(ParallelTools::getWorkers()); }
+  ~Reducer_Vector() {
+    // if the types are trivially destructable ensure that we don't delete them
+    // one at a time
+    if constexpr (std::is_trivially_destructible_v<T>) {
+      for (auto &vec : data) {
+        typename std::_Vector_base<T, std::allocator<T>>::_Vector_impl
+            *vectorPtr =
+                (typename std::_Vector_base<T, std::allocator<T>>::_Vector_impl
+                     *)((void *)&vec.f);
+        vectorPtr->_M_start = vectorPtr->_M_finish =
+            vectorPtr->_M_end_of_storage = nullptr;
+        delete vectorPtr->_M_start;
+      }
+    }
+  }
 
   Reducer_Vector(std::vector<T> &start) {
     data.resize(ParallelTools::getWorkers());
