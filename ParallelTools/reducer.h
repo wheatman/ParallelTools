@@ -147,9 +147,9 @@ public:
             *vectorPtr =
                 (typename std::_Vector_base<T, std::allocator<T>>::_Vector_impl
                      *)((void *)&vec.f);
+        delete vectorPtr->_M_start;
         vectorPtr->_M_start = vectorPtr->_M_finish =
             vectorPtr->_M_end_of_storage = nullptr;
-        delete vectorPtr->_M_start;
       }
     }
   }
