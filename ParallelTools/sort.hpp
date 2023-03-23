@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <functional>
 
+#if PARLAY == 1
+#include "parlay/primitives.h"
+#endif
+
 namespace ParallelTools {
 
 template <class InputIt, class OutputIt, class Compare = std::less<>>
@@ -64,6 +68,9 @@ template <class RandomIt, class Compare = std::less<>>
 void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
 #if PARALLEL == 0
   return std::sort(first, last, comp);
+#endif
+#if PARLAY == 1
+  return parlay::sort(parlay::make_slice(first, last), comp);
 #endif
   using E = typename std::iterator_traits<RandomIt>::value_type;
   if (last - first < 10000) {
