@@ -32,7 +32,7 @@ cc_library(
     hdrs = ["concurrent_hash_map.hpp"],
     deps = [
         "parallel",
-        "reduce"
+        "reducer"
     ],
 )
 
