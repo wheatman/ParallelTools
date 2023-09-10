@@ -67,10 +67,14 @@ merge(A[r+1...j], B[s...ℓ], C[t+1...q])
 template <class RandomIt, class Compare = std::less<>>
 void sort(RandomIt first, RandomIt last, Compare comp = std::less<>()) {
 #if PARALLEL == 0
-  return std::sort(first, last, comp);
+  std::sort(first, last, comp);
+  return;
 #endif
 #if PARLAY == 1
-  return parlay::sort(parlay::make_slice(first, last), comp);
+  if constexpr (parlay::is_random_access_iterator_v<RandomIt>) {
+    parlay::sort_inplace(parlay::make_slice(first, last), comp);
+    return;
+  }
 #endif
   using E = typename std::iterator_traits<RandomIt>::value_type;
   if (last - first < 10000) {
