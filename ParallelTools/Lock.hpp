@@ -163,3 +163,51 @@ private:
   std::atomic_flag writer{false};
   partitioned_counter<48> readers{};
 };
+
+class ReaderWriterLock2 {
+public:
+  ReaderWriterLock2() : writer(0), readers(0) {}
+
+  /**
+   * Try to acquire a lock and spin until the lock is available.
+   */
+  void read_lock(int cpuid = -1) {
+
+    readers++;
+
+    while (writer.test(std::memory_order_relaxed)) {
+      readers--;
+      writer.wait(true, std::memory_order_relaxed);
+      readers++;
+    }
+  }
+
+  void read_unlock(int cpuid = -1) {
+    readers--;
+    return;
+  }
+
+  /**
+   * Try to acquire a write lock and spin until the lock is available.
+   * Then wait till reader count is 0.
+   */
+  void write_lock() {
+    // acquire write lock.
+    while (writer.test_and_set(std::memory_order_acq_rel)) {
+      writer.wait(true, std::memory_order_acq_rel);
+    }
+    // wait for readers to finish
+    while (readers > 0) {
+    }
+  }
+
+  void write_unlock(void) {
+    writer.clear(std::memory_order_release);
+    writer.notify_all();
+    return;
+  }
+
+private:
+  std::atomic_flag writer{false};
+  std::atomic<int> readers{};
+};
