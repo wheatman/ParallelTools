@@ -100,7 +100,7 @@ public:
   ~partitioned_counter() { delete[] local_counters; }
 };
 
-class ReaderWriterLock {
+template <int num_counters = 48> class ReaderWriterLock {
 
 public:
   ReaderWriterLock() : writer(0) {}
@@ -163,7 +163,7 @@ public:
 
 private:
   std::atomic_flag writer{false};
-  partitioned_counter<48> readers{};
+  partitioned_counter<num_counters> readers{};
 };
 
 class ReaderWriterLock2 {
